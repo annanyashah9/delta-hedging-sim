@@ -15,7 +15,7 @@ which lets us compare hedging frequencies on identical underlying realizations.
 
 import numpy as np
 
-from .black_scholes import bs_delta
+from .black_scholes import bs_delta, bs_gamma
 
 
 def delta_hedge(paths, K, r, sigma, T, premium, hedge_steps=None):
@@ -63,3 +63,37 @@ def delta_hedge(paths, K, r, sigma, T, premium, hedge_steps=None):
     cash += delta_prev * S_T                            # liquidate the hedge
     payoff = np.maximum(S_T - K, 0.0)                   # what we owe the call holder
     return cash - payoff
+
+
+def gamma_pnl(paths, K, r, sigma_implied, T, sigma_realized, hedge_steps=None):
+    """Theoretical gamma P&L of the SHORT call when realized vol != implied vol.
+
+    Per path, sum over the rebalance intervals:
+
+        sum_i  0.5 * Gamma(S_i, tau_i; sigma_implied) * S_i^2
+                   * (sigma_implied^2 - sigma_realized^2) * dt_i
+
+    The gamma is the BS gamma at the vol we hedged with (sigma_implied); the only
+    thing realized vol does here is set the (sigma_implied^2 - sigma_realized^2) gap.
+
+    Sign matches `delta_hedge` (short option): calmer-than-charged realized vol
+    (sigma_realized < sigma_implied) gives a positive gap -> profit; wilder -> loss.
+    When the two vols match, every term is zero.
+
+    `hedge_steps` mirrors `delta_hedge`: the interval-start dates we evaluate gamma on,
+    defaulting to every daily step. Fully vectorized across paths.
+    """
+    n_steps = paths.shape[1] - 1
+    if hedge_steps is None:
+        hedge_steps = np.arange(n_steps + 1)
+
+    times = hedge_steps * (T / n_steps)
+    starts = hedge_steps[:-1]               # interval-start columns (exclude expiry)
+    S = paths[:, starts]                    # (n_paths, n_intervals) spots at interval starts
+    tau = T - times[:-1]                    # time-to-expiry at each start, all > 0
+    dt = np.diff(times)                     # interval lengths (handles uneven grids)
+
+    gamma = bs_gamma(S, K, r, sigma_implied, tau)   # broadcast over the spot matrix
+    vol_gap = sigma_implied**2 - sigma_realized**2
+    contributions = 0.5 * gamma * S**2 * vol_gap * dt
+    return contributions.sum(axis=1)

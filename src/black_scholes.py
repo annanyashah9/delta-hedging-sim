@@ -32,3 +32,15 @@ def bs_delta(S, K, r, sigma, T):
     """Call delta, N(d1) — units of spot to hold against one short call."""
     d1, _ = bs_d1_d2(S, K, r, sigma, T)
     return norm.cdf(d1)
+
+
+def bs_gamma(S, K, r, sigma, T):
+    """Call gamma, phi(d1) / (S sigma sqrt(T)) — same for a put.
+
+    The curvature of the option value in spot; it's what drives the gamma P&L
+    when realized vol differs from the vol we hedged with.
+    """
+    d1, _ = bs_d1_d2(S, K, r, sigma, T)
+    S = np.asarray(S, dtype=float)
+    T = np.asarray(T, dtype=float)
+    return norm.pdf(d1) / (S * sigma * np.sqrt(T))

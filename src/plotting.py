@@ -32,14 +32,14 @@ def plot_pnl_histogram(pnl, premium, path):
     plt.close(fig)
 
 
-def plot_pnl_histograms(results, premium, path):
-    """Overlay the P&L histograms for several rebalancing frequencies on one axis.
+def plot_pnl_histograms(results, premium, path, title=None):
+    """Overlay several P&L histograms on one axis (one per scenario / frequency).
 
-    `results` is a list of dicts with keys "frequency" and "pnl" (ordered coarse -> fine).
-    Outline (step) histograms on shared axes make the narrowing easy to compare directly.
+    `results` is a list of dicts with keys "label" and "pnl". Outline (step) histograms
+    on shared axes make the differences easy to compare directly. `title` overrides the
+    default heading.
     """
-    # shared bins from the widest distribution (the coarsest hedge) so every histogram
-    # is drawn on the same scale
+    # shared bins from the widest distribution so every histogram is on the same scale
     widest = max(results, key=lambda d: np.std(d["pnl"]))
     lo, hi = np.min(widest["pnl"]), np.max(widest["pnl"])
     bins = np.linspace(lo, hi, 60)
@@ -47,16 +47,45 @@ def plot_pnl_histograms(results, premium, path):
     fig, ax = plt.subplots(figsize=(9, 5.5))
     for d in results:
         ax.hist(d["pnl"], bins=bins, histtype="step", linewidth=1.8,
-                label=f"{d['frequency']} (std={np.std(d['pnl']):.2e})")
+                label=f"{d['label']} (mean={np.mean(d['pnl']):.1e}, "
+                      f"std={np.std(d['pnl']):.1e})")
 
     ax.axvline(0.0, color="black", linestyle="--", linewidth=1.2, label="zero")
-    ax.set_title(
-        "Delta-hedging P&L by rebalancing frequency\n"
+    ax.set_title(title or (
+        "Delta-hedging P&L by scenario\n"
         f"short EUR/USD call, BS premium = {premium:.6f}, "
         f"{len(results[0]['pnl'])} paths"
-    )
+    ))
     ax.set_xlabel("Hedging P&L at expiry (USD per EUR)")
     ax.set_ylabel("Number of paths")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def plot_pnl_vs_gamma(scenarios, path):
+    """Scatter simulated path P&L (y) against theoretical gamma P&L (x), per scenario.
+
+    `scenarios` is a list of dicts with keys "label", "sim_pnl", "gamma_pnl". Points
+    hugging the y=x line show the gamma decomposition holds path by path, not just on
+    average; the spread off the line is the daily-hedge discretization noise.
+    """
+    fig, ax = plt.subplots(figsize=(7, 7))
+    for s in scenarios:
+        ax.scatter(s["gamma_pnl"], s["sim_pnl"], s=10, alpha=0.4, label=s["label"])
+
+    # y = x reference across the full range of points
+    all_vals = np.concatenate(
+        [np.concatenate([s["gamma_pnl"], s["sim_pnl"]]) for s in scenarios]
+    )
+    lo, hi = all_vals.min(), all_vals.max()
+    ax.plot([lo, hi], [lo, hi], "k--", linewidth=1.2, label="y = x")
+
+    ax.set_title("Simulated hedging P&L vs theoretical gamma P&L\n(one point per path)")
+    ax.set_xlabel("Theoretical gamma P&L (USD per EUR)")
+    ax.set_ylabel("Simulated hedging P&L (USD per EUR)")
+    ax.set_aspect("equal", adjustable="box")
     ax.legend()
     fig.tight_layout()
     fig.savefig(path, dpi=150)

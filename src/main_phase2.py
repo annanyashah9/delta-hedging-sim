@@ -75,6 +75,7 @@ def main(params: Params = None):
         )
         results.append({
             "frequency": label,
+            "label": label,        # used by the overlaid-histogram plot helper
             "interval_days": interval_days,
             "n_intervals": len(hedge_steps) - 1,
             "mean_pnl": float(np.mean(pnl)),
