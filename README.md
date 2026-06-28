@@ -25,7 +25,7 @@ The hedge is **self-financing**: sell the call, pocket the Black–Scholes premi
 `delta` units of spot with the rest in cash, and rebalance over time. Whatever is left
 after liquidating at expiry and paying the call holder is the **hedging error**. If
 Black–Scholes were exactly right and we rebalanced continuously, that error would be zero.
-All the parameters live in [src/config.py](src/config.py).
+All the parameters live in [src/config.py](./src/config.py).
 
 ## Setup
 
@@ -34,8 +34,8 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Each phase is its own runnable module. Figures are written to [figures/](figures/) and
-summary tables to [results/](results/).
+Each phase is its own runnable module. Figures are written to [figures/](./figures/) and
+summary tables to [results/](./results/).
 
 ```bash
 python -m src.main          # Phase 1
@@ -46,7 +46,7 @@ python -m src.main_phase4   # Phase 4
 
 ## The phases
 
-### Phase 1 — Constant vol, daily hedge ([src/main.py](src/main.py))
+### Phase 1 — Constant vol, daily hedge ([src/main.py](./src/main.py))
 
 The baseline run. Simulate constant-vol GBM paths, hedge each one daily with the BS delta
 at the same vol we priced the option with, and check that the mean P&L sits essentially at
@@ -54,9 +54,9 @@ zero. It does: mean P&L comes out around −0.02% of the premium, with a std of 
 against a premium of 0.0614. The hedge is unbiased and what's left is just discretization
 noise.
 
-![Phase 1 P&L histogram](figures/pnl_histogram.png)
+![Phase 1 P&L histogram](./figures/pnl_histogram.png)
 
-### Phase 2 — Rebalancing frequency and the sqrt-law ([src/main_phase2.py](src/main_phase2.py))
+### Phase 2 — Rebalancing frequency and the sqrt-law ([src/main_phase2.py](./src/main_phase2.py))
 
 Hedge the *same* underlying paths at four frequencies — monthly, weekly, daily,
 twice-daily — so frequency is the only thing that changes. The error shrinks the more
@@ -71,9 +71,9 @@ of the rebalance interval. The log-log fit of std against interval lands at a sl
 | Daily | 1 | 4.0% |
 | Twice-daily | 0.5 | 2.9% |
 
-![Hedging-error scaling](figures/hedging_error_scaling.png)
+![Hedging-error scaling](./figures/hedging_error_scaling.png)
 
-### Phase 3 — Implied vs. realized vol and the gamma P&L ([src/main_phase3.py](src/main_phase3.py))
+### Phase 3 — Implied vs. realized vol and the gamma P&L ([src/main_phase3.py](./src/main_phase3.py))
 
 Split the two volatilities apart: price and hedge at a fixed implied vol of 10%, but let
 the underlying actually move at a different realized vol. The hedged P&L shifts off zero,
@@ -89,10 +89,10 @@ gamma P&L scenario by scenario and they line up.
 Calmer-than-charged markets pay you, wilder ones cost you, and the amount is the gamma P&L
 almost exactly.
 
-![P&L by vol scenario](figures/pnl_histograms_by_vol_scenario.png)
-![Simulated vs. theoretical gamma P&L](figures/pnl_vs_gamma_scatter.png)
+![P&L by vol scenario](./figures/pnl_histograms_by_vol_scenario.png)
+![Simulated vs. theoretical gamma P&L](./figures/pnl_vs_gamma_scatter.png)
 
-### Phase 4 — Model risk: stochastic vol hedged with a constant-vol delta ([src/main_phase4.py](src/main_phase4.py))
+### Phase 4 — Model risk: stochastic vol hedged with a constant-vol delta ([src/main_phase4.py](./src/main_phase4.py))
 
 Here the underlying follows Heston (stochastic variance, CIR), but the desk keeps hedging
 with the Phase 1 constant-vol delta — the hedge code is reused unchanged, only the
@@ -103,7 +103,7 @@ baseline, the leverage case (`rho = −0.7`) has roughly 5x the error std and a 
 1%-tail loss. Getting the average vol right isn't enough — the randomness of vol is its
 own risk.
 
-![Model risk: Heston vs. baseline](figures/pnl_heston_vs_baseline.png)
+![Model risk: Heston vs. baseline](./figures/pnl_heston_vs_baseline.png)
 
 ## Layout
 
