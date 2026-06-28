@@ -44,6 +44,13 @@ python -m src.main_phase3   # Phase 3
 python -m src.main_phase4   # Phase 4
 ```
 
+The numerical core (Black–Scholes price/delta/gamma and the delta hedge) is covered by a
+small test suite. Run it from the repo root:
+
+```bash
+pytest
+```
+
 ## The phases
 
 ### Phase 1 — Constant vol, daily hedge ([src/main.py](./src/main.py))
